@@ -14,12 +14,12 @@ v = Validator()
 schema_post = {'geometry': {'anyof_type': ['object', 'list', 'string'], 'required': True},
                'format_in': {'type': 'string', 'allowed': ['geojson', 'point', 'encodedpolyline', 'encodedpolyline5', 'encodedpolyline6', 'polyline'], 'required': True},
                'format_out': {'type': 'string', 'allowed': ['geojson', 'point', 'encodedpolyline', 'encodedpolyline5', 'encodedpolyline6', 'polyline'], 'default': 'geojson'},
-               'dataset': {'type': 'string', 'allowed': ['srtm'], 'default': 'srtm'}
+               'dataset': {'type': 'string', 'allowed': ['srtm', 'swissalti', 'copernicus'], 'default': 'srtm'}
                }
 
 schema_get = {'geometry': {'type': 'string', 'required': True},
               'format_out': {'type': 'string', 'allowed': ['geojson', 'point'], 'default': 'geojson'},
-              'dataset': {'type': 'string', 'allowed': ['srtm'], 'default': 'srtm'}
+              'dataset': {'type': 'string', 'allowed': ['srtm', 'swissalti', 'copernicus'], 'default': 'srtm'}
               }
 
 def validate_request(request):

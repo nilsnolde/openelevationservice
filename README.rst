@@ -9,6 +9,24 @@
 Quickstart
 ==================================================
 
+Admin
+------
+
+Data directories
+################
+
+**swissalti3d**: ``var/scripts/openelevationservice/data/swissalti3d``
+**copernicus**: ``var/scripts/openelevationservice/data/copernicus``
+
+PostGIS
+#######
+
+Runs in Docker via ``/var/scripts/openelevationservice/docker-postgis/docker-compose.yml``.
+
+**Port**: 5432
+**User**: uaveditor
+**Pass**: v4vBmUEgwE2oJE
+
 Description
 --------------------------------------------------
 
