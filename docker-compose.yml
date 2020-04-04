@@ -1,11 +1,10 @@
 version: '2.2'
 services:
- gunicorn_flask:
-  #network_mode: "host"
-  #build: .
-  image: uaveditor:openelevationservice:0.2.1-uav
+ openelevationservice:
+  network_mode: "host"
+  image: uaveditor/openelevationservice:0.2.1-uav
   volumes:
-  - ./tiles:/deploy/app/tiles
+  - /var/scripts/openelevationservice/data:/deploy/app/tiles
   ports:
    - "5020:5000"
   mem_limit: 28g

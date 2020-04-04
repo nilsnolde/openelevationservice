@@ -4,7 +4,6 @@ from openelevationservice import SETTINGS
 from openelevationservice.server.utils import logger
 
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import Index
 from geoalchemy2 import Raster
 
 db = SQLAlchemy()

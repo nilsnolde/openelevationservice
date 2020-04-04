@@ -15,17 +15,30 @@ Admin
 Data directories
 ################
 
-**swissalti3d**: ``var/scripts/openelevationservice/data/swissalti3d``
-**copernicus**: ``var/scripts/openelevationservice/data/copernicus``
+- **swissalti3d**: ``var/scripts/openelevationservice/data/swissalti3d``
+- **copernicus**: ``var/scripts/openelevationservice/data/copernicus``
 
 PostGIS
 #######
 
 Runs in Docker via ``/var/scripts/openelevationservice/docker-postgis/docker-compose.yml``.
 
-**Port**: 5432
-**User**: uaveditor
-**Pass**: v4vBmUEgwE2oJE
+- **Database**: ``gis``
+- **Port**: 5432
+- **User**: uaveditor
+- **Pass**: v4vBmUEgwE2oJE
+
+Tables
+++++++
+
+- **swissalti**: EPSG:2056, ~ 39 GB
+- **copernicus**: EPSG:3035
+
+Commands
+########
+
+- **Import Swiss Alti**: ``nohup docker exec -t openelevationservice_openelevationservice_1 /bin/bash -c "ulimit -S -s 100000 && raster2pgsql -s 2056 -C -a -M -P -t 100x100 /deploy/app/tiles/swissalti3d/**/*.tif swissalti | psql -q -h db -p 5432 -U uaveditor -d gis" &``
+- **Import Copernicus**: ``nohup docker exec -t openelevationservice_openelevationservice_1 /bin/bash -c "raster2pgsql -s 3035 -C -a -M -P -t 100x100 /deploy/app/tiles/copernicus/*.TIF copernicus | psql -q -h db -p 5432 -U uaveditor -d gis" &``
 
 Description
 --------------------------------------------------

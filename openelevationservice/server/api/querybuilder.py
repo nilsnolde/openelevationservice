@@ -6,7 +6,8 @@ from openelevationservice.server.db_import.models import db, Cgiar, SwissAlti, C
 from openelevationservice.server.api.api_exceptions import InvalidUsage
 
 from geoalchemy2.functions import ST_DumpPoints, ST_Dump, ST_Value, ST_Intersects, ST_X, ST_Y, ST_Transform, ST_SnapToGrid
-from sqlalchemy import func
+from sqlalchemy import func, Integer
+from sqlalchemy.orm.exc import NoResultFound
 import json
 
 log = get_logger(__name__)
@@ -78,19 +79,17 @@ def line_elevation(geometry, format_out, dataset):
                             .label('geom')) \
                             .subquery().alias('points2d')
 
-        query_points2d
-
         query_getelev = db.session \
-                            .query(query_points2d.c.geom,
+                            .query(ST_Transform(query_points2d.c.geom, 4326).label('geom'),
                                    ST_Value(Model.rast, query_points2d.c.geom).label('z')) \
                             .filter(ST_Intersects(Model.rast, query_points2d.c.geom)) \
                             .subquery().alias('getelevation')
 
         query_points3d = db.session \
-                            .query(ST_Transform(func.ST_SetSRID(func.ST_MakePoint(ST_X(query_getelev.c.geom),
+                            .query(func.ST_MakePoint(ST_X(query_getelev.c.geom),
                                                                      ST_Y(query_getelev.c.geom),
-                                                                     query_getelev.c.z),
-                                              input_crs), 4326).label('geom')) \
+                                                                     query_getelev.c.z.cast(Integer)
+                                                     ).label('geom')) \
                             .subquery().alias('points3d')
 
         if format_out == 'geojson':
@@ -105,13 +104,13 @@ def line_elevation(geometry, format_out, dataset):
     else:
         raise InvalidUsage(400, 4002, "Needs to be a LineString, not a {}!".format(geometry.geom_type))
 
-    log.debug(str(query_final))
-    # Behaviour when all vertices are out of bounds
-    if query_final[0][0] == None:
+    try:
+        result = query_final.one()
+    except NoResultFound:
         raise InvalidUsage(404, 4002,
-                           'The requested geometry is outside the bounds of {}'.format(dataset))
-        
-    return query_final[0][0]
+                           f'{tuple(geometry.coords)[0]} has no elevation value in {dataset}')
+
+    return result[0]
 
 
 def point_elevation(geometry, format_out, dataset):
@@ -141,41 +140,31 @@ def point_elevation(geometry, format_out, dataset):
                             .query(ST_Transform(func.ST_SetSRID(func.St_PointFromText(geometry.wkt), 4326), input_crs).label('geom')) \
                             .subquery() \
                             .alias('points2d')
-        # query_point2d = db.session \
-        #                     .query(func.ST_SetSRID(func.St_PointFromText(geometry.wkt), input_crs).label('geom')) \
-        #                     .subquery() \
-        #                     .alias('points2d')
         
         query_getelev = db.session \
-                            .query(query_point2d.c.geom,
+                            .query(ST_Transform(query_point2d.c.geom, 4326).label('geom'),
                                    ST_Value(Model.rast, query_point2d.c.geom).label('z')) \
                             .filter(ST_Intersects(Model.rast, query_point2d.c.geom)) \
                             .subquery().alias('getelevation')
         
         if format_out == 'geojson': 
             query_final = db.session \
-                .query(func.ST_AsGeoJSON(ST_SnapToGrid(ST_Transform(func.ST_SetSRID(func.ST_MakePoint(ST_X(query_getelev.c.geom),
+                .query(func.ST_AsGeoJSON(ST_SnapToGrid(func.ST_MakePoint(ST_X(query_getelev.c.geom),
                                                                                            ST_Y(query_getelev.c.geom),
-                                                                                           query_getelev.c.z), input_crs), 4326),
+                                                                                           query_getelev.c.z.cast(Integer)),
                                                                         coord_precision)))
-                # .query(func.ST_AsGeoJSON(ST_SnapToGrid(func.ST_SetSRID(func.ST_MakePoint(ST_X(query_getelev.c.geom),
-                #                                                                            ST_Y(query_getelev.c.geom),
-                #                                                                            query_getelev.c.z), input_crs),
-                #                                                         coord_precision)))
         else:
             query_final = db.session \
-                                .query(func.ST_AsText(ST_SnapToGrid(ST_Transform(func.ST_SetSRID(func.ST_MakePoint(ST_X(query_getelev.c.geom),
+                                .query(func.ST_AsText(ST_SnapToGrid(func.ST_MakePoint(ST_X(query_getelev.c.geom),
                                                                                        ST_Y(query_getelev.c.geom),
-                                                                                       query_getelev.c.z), input_crs), 4326),
+                                                                                       query_getelev.c.z.cast(Integer)),
                                                                     coord_precision)))
     else:
         raise InvalidUsage(400, 4002, "Needs to be a Point, not {}!".format(geometry.geom_type))
 
-
-    log.debug(str(query_final))
     try:
-        return query_final[0][0]
-    except:
-        raise
+        result = query_final.one()
+        return result[0]
+    except NoResultFound:
         raise InvalidUsage(404, 4002,
-                           'The requested geometry is outside the bounds of {}'.format(dataset))
+                           f'{tuple(geometry.coords)[0]} has no elevation value in {dataset}')

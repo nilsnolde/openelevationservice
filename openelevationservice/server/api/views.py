@@ -5,8 +5,10 @@ from openelevationservice.server.api import api_exceptions
 from openelevationservice.server.utils import logger, convert, codec
 from openelevationservice.server.api import querybuilder, validator
 from openelevationservice.server.api.response import ResponseBuilder
+from openelevationservice.server.api.api_exceptions import InvalidUsage
 
 from shapely import wkt
+from shapely.errors import WKTReadingError
 import json
 from flask import Blueprint, request, jsonify
     
@@ -57,7 +59,10 @@ def elevationline():
     
     # decision tree for format_out
     if format_out != 'geojson':
-        geom_out = wkt.loads(geom_queried)
+        try:
+            geom_out = wkt.loads(geom_queried)
+        except WKTReadingError:
+            raise InvalidUsage(404, 4002, f"Only 1 point has elevation in {dataset}, not possible to generate a LineString.")
         coords = geom_out.coords
         if format_out in ['encodedpolyline', 'encodedpolyline5']:
             results['geometry'] = codec.encode(coords, precision=5, is3d=True)
@@ -67,10 +72,14 @@ def elevationline():
             results['geometry'] = list(coords)
     elif format_out == 'geojson':
         results['geometry'] = json.loads(geom_queried)
+        coords = results['geometry']['coordinates']
     else:
         raise api_exceptions.InvalidUsage(400,
                                           4000,
                                           f'Invalid format_out value "{format_out}"')
+
+    if len(coords) != len(geom.coords):
+        raise InvalidUsage(404, 4002, f"{len(geom.coords) - len(coords)} points have no elevation in {dataset}")
     
     return jsonify(results)
 
