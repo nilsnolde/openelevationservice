@@ -81,7 +81,7 @@ def line_elevation(geometry, format_out, dataset):
 
         query_getelev = db.session \
                             .query(ST_Transform(query_points2d.c.geom, 4326).label('geom'),
-                                   ST_Value(Model.rast, query_points2d.c.geom).label('z')) \
+                                   ST_Value(Model.rast, query_points2d.c.geom, False).label('z')) \
                             .filter(ST_Intersects(Model.rast, query_points2d.c.geom)) \
                             .subquery().alias('getelevation')
 
@@ -143,7 +143,7 @@ def point_elevation(geometry, format_out, dataset):
         
         query_getelev = db.session \
                             .query(ST_Transform(query_point2d.c.geom, 4326).label('geom'),
-                                   ST_Value(Model.rast, query_point2d.c.geom).label('z')) \
+                                   ST_Value(Model.rast, query_point2d.c.geom, False).label('z')) \
                             .filter(ST_Intersects(Model.rast, query_point2d.c.geom)) \
                             .subquery().alias('getelevation')
         

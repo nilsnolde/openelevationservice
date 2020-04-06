@@ -37,8 +37,19 @@ Tables
 Commands
 ########
 
-- **Import Swiss Alti**: ``nohup docker exec -t openelevationservice_openelevationservice_1 /bin/bash -c "ulimit -S -s 100000 && raster2pgsql -s 2056 -C -a -M -P -t 100x100 /deploy/app/tiles/swissalti3d/**/*.tif swissalti | psql -q -h db -p 5432 -U uaveditor -d gis" &``
-- **Import Copernicus**: ``nohup docker exec -t openelevationservice_openelevationservice_1 /bin/bash -c "raster2pgsql -s 3035 -C -a -M -P -t 100x100 /deploy/app/tiles/copernicus/*.TIF copernicus | psql -q -h db -p 5432 -U uaveditor -d gis" &``
+Change NoData values
++++++++++++++++++++++
+
+Both datasets have problematic NoData values, so we change them to 0. Run the scripts in the PostGIS Docker container:
+
+- **Swissalti**: [`./scripts/change_nodata_swisstopo.sh`](scripts/change_nodata_swisstopo.sh)
+- **Copernicus**: [`./scripts/change_nodata_copenicus.sh`](scripts/change_nodata_copenicus.sh
+
+Import
+++++++++
+
+- **Import Swiss Alti**: ``nohup docker exec -t openelevationservice_openelevationservice_1 /bin/bash -c "ulimit -S -s 100000 && raster2pgsql -s 2056 -C -a -M -P -k -t 100x100 /deploy/app/tiles/swissalti3d/**/*.tif swissalti | psql -q -h db -p 5432 -U uaveditor -d gis" &``
+- **Import Copernicus**: ``nohup docker exec -t openelevationservice_openelevationservice_1 /bin/bash -c "raster2pgsql -s 3035 -C -a -M -P -k -t 100x100 /deploy/app/tiles/copernicus/*.TIF copernicus | psql -q -h db -p 5432 -U uaveditor -d gis" &``
 
 Description
 --------------------------------------------------
